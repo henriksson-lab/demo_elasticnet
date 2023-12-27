@@ -1,5 +1,6 @@
 library(plotly)
 library(Cairo)
+library(glmnet)
 options(shiny.usecairo=T)
 
 
@@ -77,6 +78,23 @@ server <- function(input, output, session) {
   })
   
   
+  
+  ######################
+  # Find 
+  getSolutionCV <- reactive({
+    ##### Load the data
+    thedat <- getDataTable()
+    bases <- getBases()
+    
+    cvfit <- cv.glmnet(
+      as.matrix(bases), 
+      thedat$y,
+      intercept = FALSE
+    )
+    cvfit
+  })
+  
+  
   getSolution <- reactive({
 
     ##### Load the data
@@ -84,30 +102,38 @@ server <- function(input, output, session) {
 
     ##### Solve; Predict for all points, including test set ---- basic LM
     bases <- getBases()
-    tosolve <- bases[getTrainingIndex(),,drop=FALSE]
-    tosolve$y <- thedat$y[getTrainingIndex()]
-    themod <- lm(data=tosolve, formula="y~.-1")
-    pred.y <- predict(themod,bases)
-    
-    if(FALSE){
+    if(!input$penalty_enable){
+      
+      ## Only works if not penalized. but handles ncol(x)=1 case
+      tosolve <- bases[getTrainingIndex(),,drop=FALSE]
+      tosolve$y <- thedat$y[getTrainingIndex()]
+      themod <- lm(data=tosolve, formula="y~.-1")
+      pred.y <- predict(themod,bases)
+      coeff_val <- coef(themod)
+
+    } else {
+      
+      ##### Solve; Predict for all points, including test set ---- elastic net LM
       fit.glm <- glmnet(
-        bases[getTrainingIndex(),,drop=FALSE], 
+        as.matrix(bases[getTrainingIndex(),,drop=FALSE]), 
         thedat$y[getTrainingIndex()],
         intercept = FALSE, 
-        alpha = 1,  #from 0 to 1
-        lambda = 0  #can be a full list
+        alpha = input$penalty_alpha,  #from 0 to 1
+        lambda = exp(input$penalty_loglambda)  #can be a full list  ##### manual suggests not giving lambda here, but ask for it later
       )
-      coef(fit.glm, s = 0.1)
-      plot(cvfit) #error vs lambda     
+      
+      pred.y <- predict(fit.glm,as.matrix(bases))
+      coeff_val <- coef(fit.glm)[,1][-1] #first is intercept. do not include
     }
     
+
     #####
     # https://glmnet.stanford.edu/articles/glmnet.html
     
     ##### Return stuff
     thefit <- list(
-      themod=themod,
-      coeff=tosolve$coefficients,
+      coeff=colnames(bases),#tosolve$coefficients,
+      coeff_val=coeff_val,
       
       x=thedat$x,
       pred.y=pred.y,
@@ -182,6 +208,35 @@ server <- function(input, output, session) {
   })
 
     
+  
+  
+  ##############################################################################
+  ########### CV fit plot tab ##################################################
+  ##############################################################################
+  
+  output$plotCVfit <- renderPlot({
+    
+    
+    cvfit <- getSolutionCV()
+    
+    
+    #coef(fit.glm, s = 0.1)
+    #plot(cvfit) #error vs lambda     
+    #cvfit$lambda.min
+    #coef(cvfit, s = "lambda.min")
+    #predict(cvfit, newx = x[1:5,], s = "lambda.min")
+    
+    plot(cvfit)
+    
+#    p1 <- ggplot(thedat_train,aes(x,y)) + 
+#      geom_point() +
+#      geom_line(data=data.frame(x=sol$x[sol$index.training],y=sol$pred.y[sol$index.training]),mapping=aes(x,y)) +
+#      ggtitle("Training points")
+#    p1
+    #egg::ggarrange(p1,p2)
+  })
+  
+  
 
 }
 

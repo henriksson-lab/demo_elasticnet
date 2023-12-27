@@ -9,8 +9,10 @@ library(ggplot2)
 
 tab_about <- fluidPage(
   p("This demo was originally developed by ", a("Johan Henriksson", href="http://www.henlab.org")),
+  p("Elastic net fit is done using ", a("glmnet", href="https://glmnet.stanford.edu/articles/glmnet.html")),
   p("Licensed under 2-clause BSD license, https://opensource.org/license/bsd-2-clause/")
 )
+
 
 tab_datatable <- fluidPage(
   p("Training points:"),
@@ -22,6 +24,11 @@ tab_scatter <- fluidPage(
   plotOutput(outputId = "plotScatter", height = "400px")
 )
 
+
+tab_cvfit <- fluidPage(
+  
+  plotOutput(outputId = "plotCVfit", height = "400px")
+)
 
 ################################################################################
 ########### Total page #########################################################
@@ -52,7 +59,7 @@ ui <- fluidPage(
     "
   )),
   
-  titlePanel("Demo of linear model fitting"),
+  titlePanel("Demo of linear model fitting, optional penalization"),
 
   sidebarLayout(
     sidebarPanel(
@@ -104,6 +111,29 @@ ui <- fluidPage(
             step = 1,
             value=1
           ),
+          
+          checkboxInput("penalty_enable", "Penalize", FALSE),
+          
+          sliderInput(
+            inputId = "penalty_loglambda",
+            label = "Penalty log(lambda):",
+            min=-15,
+            max=0,
+            step = 0.1,
+            value=-15
+          ),
+          
+          sliderInput(
+            inputId = "penalty_alpha",
+            label = "Penalty alpha:",
+            min=0,
+            max=1,
+            step = 0.01,
+            value=1
+          ),
+          
+          img(src='glmnet_equation.png', width="100%", align = "right"),
+          p(HTML('&nbsp;')),
       )
 
     ),
@@ -111,6 +141,7 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(type = "tabs",
                   tabPanel("Scatter plot", tab_scatter),
+                  tabPanel("CV fit", tab_cvfit),
                   tabPanel("Data table", tab_datatable),
                   tabPanel("About", tab_about)
       )

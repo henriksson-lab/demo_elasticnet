@@ -5,7 +5,11 @@ input <- list(
   num_training_point=100,
 
   basefunction="Polynomial", 
-  num_bases=5
+  num_bases=5,
+  
+  penalty_enable=FALSE,
+  penalty_lambda=0,
+  penalty_logalpha=-10
 )
 
 reactive <- function(f) function() f
