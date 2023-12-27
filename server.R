@@ -58,16 +58,25 @@ server <- function(input, output, session) {
     output <- matrix(NA, nrow=nrow(thedat), ncol=input$num_bases)
     
     if(input$basefunction=="Polynomial"){
+      
       for(i in 1:input$num_bases){
         output[,i] <- thedat$x ** i
       }
+      
     } else if(input$basefunction=="Sinusoidal"){
       
+      for(i in 1:input$num_bases){
+        output[,i] <- sin(thedat$x * (i-1)  *2*pi / max(thedat$x))
+      }
       
     } else if(input$basefunction=="Trapezoid"){  #rect too
       
+      groupPerPoint <- floor((1:nrow(thedat))/(nrow(thedat)+1)*input$num_bases)
       
-      
+      for(i in 1:input$num_bases){
+        output[,i] <- groupPerPoint == i-1
+      }
+      output <- output+0
       
     } else {
       stop(paste("Unhandled base function",input$basefunction))
@@ -132,7 +141,7 @@ server <- function(input, output, session) {
     
     ##### Return stuff
     thefit <- list(
-      coeff=colnames(bases),#tosolve$coefficients,
+      coeff=colnames(bases),
       coeff_val=coeff_val,
       
       x=thedat$x,
@@ -163,12 +172,6 @@ server <- function(input, output, session) {
   })
   
   
-  observeEvent(c(input$input_ds, input$num_training_point, input$random_seed, input$basefunction, input$num_bases),{
-    
-    ### Update solution here, then depend on solution to update views
-    
-  })
-
   
   ##############################################################################
   ########### Data table tab ###################################################
@@ -192,19 +195,57 @@ server <- function(input, output, session) {
 
     p1 <- ggplot(thedat_train,aes(x,y)) + 
       geom_point() +
-      geom_line(data=data.frame(x=sol$x[sol$index.training],y=sol$pred.y[sol$index.training]),mapping=aes(x,y)) +
+      geom_line(data=data.frame(x=sol$x,y=sol$pred.y),mapping=aes(x,y)) +
       ggtitle("Training points")
     
     p2 <- ggplot(thedat_test,aes(x,y)) + 
       geom_point() +
-      geom_line(data=data.frame(x=sol$x[sol$index.test],y=sol$pred.y[sol$index.test]),mapping=aes(x,y)) +
+      geom_line(data=data.frame(x=sol$x,y=sol$pred.y),mapping=aes(x,y)) +
       ggtitle("Test points")
+    
+    #Rescale bases; reshape
+    scaled_bases <- sol$bases
+    long_scaled_bases <- NULL
+    long_unscaled_bases <- NULL
+    for(i in 1:ncol(scaled_bases)){
+      long_scaled_bases <- rbind(long_scaled_bases,
+                                 data.frame(
+                                   x=1:nrow(scaled_bases),
+                                   base=sol$coeff[i],
+                                   y=scaled_bases[,i]*sol$coeff_val[i]
+                                 ))
+      
+      long_unscaled_bases <- rbind(long_unscaled_bases,
+                                 data.frame(
+                                   x=1:nrow(scaled_bases),
+                                   base=sol$coeff[i],
+                                   y=scaled_bases[,i]
+                                 ))
+      
+    }
+    
+    p3 <- ggplot(long_scaled_bases,aes(x,y,group=base)) + 
+      geom_line() +
+      ggtitle("Scaled bases")
+
+    p4 <- ggplot(long_unscaled_bases,aes(x,y,group=base)) + 
+      geom_line() +
+      ggtitle("Unscaled bases")
+    
+  #  colnames(scaled_bases) <- sol$coeff
+    
+    #Reshaping
+    
+    
+#    reshape::melt(scaled_bases)
+  #  rownames(scaled_bases) <- 
+    
     
     ### TODO show all bases, scaled
     ### TODO show all bases, unscaled
     
     
-    egg::ggarrange(p1,p2)
+    egg::ggarrange(p1,p2,p3,p4)
   })
 
     
