@@ -232,14 +232,7 @@ server <- function(input, output, session) {
       geom_line() +
       ggtitle("Unscaled bases")
     
-  #  colnames(scaled_bases) <- sol$coeff
-    
     #Reshaping
-    
-    
-#    reshape::melt(scaled_bases)
-  #  rownames(scaled_bases) <- 
-    
     
     ### TODO show all bases, scaled
     ### TODO show all bases, unscaled
