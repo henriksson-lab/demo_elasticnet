@@ -7,14 +7,14 @@ on:
 
 jobs:
   build:
-    if: github.repository == 'henriksson-lab/demo_linearfitting'
+    if: github.repository == 'henriksson-lab/demo_elasticnet'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Publish to Docker Hub
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          name: mahogny83/demo_linearfitting
+          name: mahogny83/demo_elasticnet
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           dockerfile: Dockerfile
