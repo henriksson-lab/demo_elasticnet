@@ -97,7 +97,7 @@ ui <- fluidPage(
       selectInput(
         inputId = "basefunction",
         label = "Base functions:",
-        choices = c("Polynomial","Sinusoidal","Trapezoid"),
+        choices = c("Polynomial","Sinusoidal","Trapezoid","ReLU"),
         selected = "Polynomial"
       ),
         

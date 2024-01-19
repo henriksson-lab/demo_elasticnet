@@ -69,7 +69,7 @@ server <- function(input, output, session) {
         output[,i] <- sin(thedat$x * (i-1)  *2*pi / max(thedat$x))
       }
       
-    } else if(input$basefunction=="Trapezoid"){  #rect too
+    } else if(input$basefunction=="Trapezoid"){  
       
       groupPerPoint <- floor((1:nrow(thedat))/(nrow(thedat)+1)*input$num_bases)
       
@@ -77,7 +77,14 @@ server <- function(input, output, session) {
         output[,i] <- groupPerPoint == i-1
       }
       output <- output+0
+
+    } else if(input$basefunction=="ReLU"){  
       
+      base_start <- seq(min(thedat$x), max(thedat$x), length.out=input$num_bases+1)
+      for(i in 1:input$num_bases){
+        output[,i] <- pmax(thedat$x - base_start[i],0)
+      }
+
     } else {
       stop(paste("Unhandled base function",input$basefunction))
     }
@@ -224,19 +231,15 @@ server <- function(input, output, session) {
       
     }
     
-    p3 <- ggplot(long_scaled_bases,aes(x,y,group=base)) + 
+    p3 <- ggplot(long_scaled_bases,aes(x,y,color=base)) + 
       geom_line() +
       ggtitle("Scaled bases")
 
-    p4 <- ggplot(long_unscaled_bases,aes(x,y,group=base)) + 
+    p4 <- ggplot(long_unscaled_bases,aes(x,y,color=base)) + 
       geom_line() +
       ggtitle("Unscaled bases")
     
-    #Reshaping
-    
-    ### TODO show all bases, scaled
-    ### TODO show all bases, unscaled
-    
+    ### could add for all bases, a baseline level
     
     egg::ggarrange(p1,p2,p3,p4)
   })
